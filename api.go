@@ -77,3 +77,29 @@ func FetchAllArtifacts(orgName, repoName, bearerToken string) (*ArtifactsRespons
 
 	return allArtifacts, nil
 }
+
+func DeleteArtifact(orgName, repoName, bearerToken string, artifactID int64) error {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/actions/artifacts/%d", orgName, repoName, artifactID)
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearerToken))
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
